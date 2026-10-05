@@ -1,0 +1,1424 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor Compito Python</title>
+<style>
+/* ============================================================
+   EDITOR COMPITO PYTHON — versione standalone (nessun account necessario)
+   Studente: scrive ed esegue il codice, alla consegna scarica un file .json.
+   Docente: apre la dashboard e carica insieme tutti i file di consegna.
+   ============================================================ */
+:root{
+  --bg:#F6F7F9; --surface:#FFFFFF; --surface-2:#EDF1F6; --border:#D7DEE6;
+  --text:#1B2430; --text-muted:#5B6B7D;
+  --accent:#1F4E79; --accent-strong:#163A5C; --accent-ink:#FFFFFF;
+  --success:#1E7B45; --success-bg:#E4F3E9;
+  --warning:#B5690A; --warning-bg:#FBEEDD;
+  --danger:#B23A3A; --danger-bg:#FBE7E7;
+  --font-display:'Fraunces', Georgia, serif;
+  --font-ui:'Figtree', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono:'JetBrains Mono', 'Consolas', monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161D; --surface:#171D27; --surface-2:#1E2630; --border:#2B3542;
+    --text:#E7ECF2; --text-muted:#93A1B0;
+    --accent:#5B9BD5; --accent-strong:#7FB2E0; --accent-ink:#0B1722;
+    --success:#4CAF7D; --success-bg:#16301F;
+    --warning:#E0A542; --warning-bg:#3A2A10;
+    --danger:#E26B6B; --danger-bg:#3A1818;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161D; --surface:#171D27; --surface-2:#1E2630; --border:#2B3542;
+  --text:#E7ECF2; --text-muted:#93A1B0;
+  --accent:#5B9BD5; --accent-strong:#7FB2E0; --accent-ink:#0B1722;
+  --success:#4CAF7D; --success-bg:#16301F;
+  --warning:#E0A542; --warning-bg:#3A2A10;
+  --danger:#E26B6B; --danger-bg:#3A1818;
+  color-scheme: dark;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--font-ui); font-size:15px; line-height:1.5;
+  padding-inline:16px;
+}
+h1,h2,h3{font-family:var(--font-display); font-weight:700; text-wrap:balance; margin:0}
+button{font-family:var(--font-ui)}
+.wrap{max-width:1180px; margin:0 auto; padding-block:28px; min-height:100%; display:flex; flex-direction:column}
+
+/* ---------- landing / forms ---------- */
+.centro{display:flex; align-items:center; justify-content:center; flex:1; padding-block:40px}
+.scheda{
+  background:var(--surface); border:1px solid var(--border); border-radius:16px;
+  padding:36px; max-width:460px; width:100%;
+}
+.eyebrow{
+  font-family:var(--font-mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 8px;
+}
+.scheda h1{font-size:26px; margin-bottom:10px}
+.scheda p.sub{color:var(--text-muted); margin:0 0 24px; font-size:14px}
+.scelta-ruolo{display:flex; flex-direction:column; gap:12px}
+.btn{
+  font-size:15px; font-weight:600; border-radius:10px; border:1px solid transparent;
+  padding:13px 18px; cursor:pointer; transition:transform .08s ease, filter .15s ease;
+  font-family:var(--font-ui);
+}
+.btn:active{transform:scale(.98)}
+.btn-primario{background:var(--accent); color:var(--accent-ink)}
+.btn-primario:hover{filter:brightness(1.08)}
+.btn-secondario{background:var(--surface-2); color:var(--text); border-color:var(--border)}
+.btn-secondario:hover{filter:brightness(1.05)}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.btn-blocco{width:100%}
+.campo{margin-bottom:16px}
+.campo label{display:block; font-size:12.5px; font-weight:600; color:var(--text-muted); margin-bottom:6px}
+.campo input[type=text], .campo input[type=password]{
+  width:100%; padding:11px 12px; border-radius:9px; border:1px solid var(--border);
+  background:var(--bg); color:var(--text); font-size:15px; font-family:var(--font-ui);
+}
+.campo input:focus{outline:2px solid var(--accent); outline-offset:1px}
+.errore-campo{color:var(--danger); font-size:13px; margin-top:8px; min-height:1em}
+.link-torna{display:inline-block; margin-top:18px; color:var(--text-muted); font-size:13px; cursor:pointer; text-decoration:underline; background:none; border:none; padding:0}
+
+/* ---------- barra superiore comune ---------- */
+.barra-top{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding-bottom:16px; margin-bottom:16px; border-bottom:1px solid var(--border); flex-wrap:wrap;
+}
+.barra-top .titolo-compito{font-family:var(--font-display); font-size:20px; font-weight:700}
+.barra-top .meta{font-size:12.5px; color:var(--text-muted); font-family:var(--font-mono)}
+.pill{
+  display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px;
+  font-size:12.5px; font-weight:600; font-family:var(--font-ui);
+}
+.pill::before{content:""; width:7px; height:7px; border-radius:50%; background:currentColor}
+.pill-success{background:var(--success-bg); color:var(--success)}
+.pill-warning{background:var(--warning-bg); color:var(--warning)}
+.pill-danger{background:var(--danger-bg); color:var(--danger)}
+.pill-neutro{background:var(--surface-2); color:var(--text-muted)}
+
+/* ---------- banco di lavoro studente ---------- */
+.banco{display:grid; grid-template-columns:300px 1fr; gap:20px; flex:1; min-height:0}
+@media (max-width:860px){ .banco{grid-template-columns:1fr} }
+.pannello-brief{
+  background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px;
+  overflow-y:auto; align-self:start; max-height:calc(100vh - 160px); min-width:0;
+}
+.pannello-brief h2{font-size:17px; margin-bottom:10px}
+.pannello-brief .corpo-brief{font-size:14px; color:var(--text); white-space:pre-wrap}
+.pannello-editor{display:flex; flex-direction:column; gap:14px; min-width:0}
+.tab-esercizi{display:flex; gap:8px; flex-wrap:wrap}
+.tab-esercizio{
+  padding:7px 14px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2);
+  color:var(--text-muted); font-size:13px; font-weight:600; cursor:pointer; font-family:var(--font-ui);
+}
+.tab-esercizio.attivo{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.barra-editor{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.riquadro-codice{
+  display:flex; border-radius:12px; overflow:hidden; border:1px solid var(--border);
+  background:#0F1720; min-height:320px; height:46vh;
+}
+.gutter{
+  font-family:var(--font-mono); font-size:13.5px; line-height:1.55; color:#5B7185;
+  background:#0B121A; padding:14px 10px; text-align:right; user-select:none; -webkit-user-select:none;
+  overflow:hidden; white-space:pre;
+}
+/* editor con evidenziazione: il testo vero e' nella textarea (trasparente), i colori
+   sono disegnati da un <pre> sottostante che segue lo scorrimento */
+.editor-stack{position:relative; flex:1; min-width:0; background:#0F1720; overflow:hidden}
+.editor-stack pre#evidenzia, .editor-stack textarea#editor{
+  position:absolute; top:0; left:0; margin:0; border:0; padding:14px;
+  font-family:var(--font-mono); font-size:13.5px; line-height:1.55; letter-spacing:0;
+  tab-size:4; -moz-tab-size:4; white-space:pre; word-wrap:normal; text-align:left;
+}
+.editor-stack pre#evidenzia{min-width:100%; color:#E7ECF2; pointer-events:none; user-select:none; -webkit-user-select:none}
+.editor-stack textarea#editor{
+  width:100%; height:100%; resize:none; outline:none; overflow:auto; background:transparent;
+  color:transparent; -webkit-text-fill-color:transparent; caret-color:#E7ECF2; -webkit-appearance:none; appearance:none;
+}
+.editor-stack textarea#editor::selection{background:rgba(91,155,213,.40)}
+.tok-c{color:#6FCF8F}
+.tok-s{color:#E3B26A}
+.tok-k{color:#C792EA}
+.tok-b{color:#7FB2E0}
+.tok-n{color:#F28B82}
+.riquadro-output{
+  border-radius:12px; border:1px solid var(--border); background:#0B121A; color:#CFE3D6;
+  font-family:var(--font-mono); font-size:13px; padding:14px; min-height:120px; max-height:220px;
+  overflow:auto; white-space:pre-wrap;
+}
+.riquadro-output .riga-errore{color:#E8918C}
+.riquadro-output .vuoto{color:#5B7185; font-style:italic}
+
+/* ---------- avviso di sorveglianza ---------- */
+.avviso-sorveglianza{
+  position:fixed; left:50%; top:calc(14px + env(safe-area-inset-top,0px)); transform:translateX(-50%);
+  background:var(--danger); color:#fff; padding:12px 20px; border-radius:11px; font-weight:600;
+  font-size:14px; box-shadow:0 10px 30px rgba(0,0,0,.25); z-index:50; max-width:90vw; text-align:center;
+}
+
+/* ---------- overlay schermo intero ---------- */
+.overlay{
+  position:fixed; inset:0; background:rgba(10,14,20,.86); display:flex; align-items:center;
+  justify-content:center; z-index:60; padding:20px;
+}
+.overlay .scheda{text-align:center}
+
+/* ---------- modale conferma ---------- */
+.modale-sfondo{position:fixed; inset:0; background:rgba(10,14,20,.6); display:flex; align-items:center; justify-content:center; z-index:70; padding:20px}
+.modale{background:var(--surface); border-radius:14px; padding:26px; max-width:380px; width:100%; border:1px solid var(--border)}
+.modale h3{font-size:18px; margin-bottom:10px}
+.modale p{font-size:14px; color:var(--text-muted); margin:0 0 20px}
+.modale .azioni{display:flex; gap:10px; justify-content:flex-end}
+
+/* ---------- schermata consegnato ---------- */
+.nome-file{font-family:var(--font-mono); font-size:13px; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; word-break:break-all; margin:0 0 16px}
+details.fallback{margin-top:18px; text-align:left; font-size:13px; color:var(--text-muted)}
+details.fallback summary{cursor:pointer}
+details.fallback textarea{
+  width:100%; height:140px; margin-top:10px; font-family:var(--font-mono); font-size:11.5px;
+  background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px;
+}
+
+/* ---------- dashboard docente ---------- */
+.dropzone{
+  display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; cursor:pointer;
+  border:2px dashed var(--border); border-radius:14px; padding:26px 16px; margin-bottom:18px;
+  background:var(--surface); color:var(--text-muted); font-size:13.5px;
+}
+.dropzone strong{color:var(--text); font-size:15px}
+.dropzone.sopra, .dropzone:hover{border-color:var(--accent)}
+.contatore-riepilogo{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px}
+.statino{
+  background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:12px 16px;
+  min-width:108px;
+}
+.statino .num{font-family:var(--font-mono); font-size:22px; font-weight:600; font-variant-numeric:tabular-nums}
+.statino .lab{font-size:12px; color:var(--text-muted)}
+.griglia-studenti{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px}
+.scheda-studente{
+  background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:16px;
+  cursor:pointer; transition:border-color .15s ease;
+}
+.scheda-studente:hover{border-color:var(--accent)}
+.scheda-studente .nome{font-weight:700; margin-bottom:6px; font-size:15px}
+.scheda-studente .riga-stat{display:flex; justify-content:space-between; font-size:12.5px; color:var(--text-muted); margin-top:4px}
+.scheda-studente .riga-stat b{color:var(--text); font-family:var(--font-mono); font-variant-numeric:tabular-nums}
+.vuoto-dashboard{color:var(--text-muted); font-size:14px; padding:40px 0; text-align:center}
+
+/* ---------- pannello dettaglio studente (docente) ---------- */
+.dettaglio-sfondo{position:fixed; inset:0; background:rgba(10,14,20,.6); z-index:70; display:flex; justify-content:flex-end}
+.dettaglio{background:var(--surface); width:min(560px,100%); height:100%; overflow-y:auto; padding:24px; border-left:1px solid var(--border)}
+.dettaglio h3{font-size:19px; margin-bottom:4px}
+.dettaglio .sotto{color:var(--text-muted); font-size:13px; margin-bottom:18px}
+.dettaglio pre.codice-vista{
+  background:#0F1720; color:#E7ECF2; font-family:var(--font-mono); font-size:12.5px;
+  border-radius:10px; padding:14px; overflow:auto; max-height:320px; white-space:pre-wrap; margin:0 0 18px;
+}
+.etichetta-output{font-size:12px; color:var(--text-muted); margin:-8px 0 4px}
+.dettaglio pre.output-vista{
+  background:#0B121A; color:#CFE3D6; font-family:var(--font-mono); font-size:12.5px;
+  border-radius:10px; padding:12px 14px; overflow:auto; max-height:200px; white-space:pre-wrap; margin:0 0 18px;
+}
+.dettaglio pre.output-vista.errore{color:#E8918C}
+.log-eventi{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; max-height:260px; overflow:auto}
+.log-eventi li{font-size:12.5px; display:flex; justify-content:space-between; gap:10px; border-bottom:1px solid var(--border); padding-bottom:5px}
+.log-eventi .tipo{font-family:var(--font-mono)}
+.log-eventi .ora{color:var(--text-muted); font-family:var(--font-mono); white-space:nowrap}
+
+.avviso-ok{background:var(--success)}
+.nota-ingresso{font-size:12.5px; color:var(--text-muted); margin:14px 0 0}
+.info-backup{font-size:13px; color:var(--success); margin-top:8px; min-height:1em}
+.banner{
+  background:var(--warning-bg); color:var(--warning); border:1px solid var(--warning);
+  border-radius:10px; padding:10px 14px; font-size:13px; margin-bottom:16px;
+}
+[hidden]{display:none!important}
+
+/* ---------- report stampabile (PDF) ---------- */
+#report-stampa{display:none}
+@page{ size:A4; margin:14mm 13mm }
+@media print{
+  body.stampa-report{background:#fff!important; color:#14202c!important; padding:0; font-size:10pt; line-height:1.4}
+  body.stampa-report .wrap, body.stampa-report .avviso-sorveglianza{display:none!important}
+  body.stampa-report #report-stampa{display:block; font-family:var(--font-ui)}
+  #report-stampa *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .rep-studente{break-before:page; page-break-before:always}
+  .rep-studente:first-child{break-before:auto; page-break-before:auto}
+  .rep-testa{display:flex; justify-content:space-between; align-items:baseline; gap:12px; border-bottom:2px solid #1F4E79; padding-bottom:4px}
+  .rep-testa h2{font-size:17pt; color:#14202c}
+  .rep-stato{font-size:9pt; font-weight:700; padding:2px 9px; border-radius:999px; border:1px solid currentColor; white-space:nowrap}
+  .rep-pill-success{color:#1E7B45}
+  .rep-pill-warning{color:#B5690A}
+  .rep-pill-danger{color:#B23A3A}
+  .rep-pill-neutro{color:#5B6B7D}
+  .rep-sub{font-size:9pt; color:#5B6B7D; margin:4px 0 8px}
+  .rep-metagriglia{display:flex; flex-wrap:wrap; gap:3px 18px; font-size:9pt; margin-bottom:10px}
+  .rep-kv b{color:#5B6B7D; font-weight:600; margin-right:5px}
+  .rep-attenzione{border:1.5px solid #B23A3A; color:#B23A3A; font-weight:700; padding:5px 9px; margin-bottom:10px; font-size:9.5pt}
+  .rep-esercizio{margin-top:12px}
+  .rep-esercizio h3{font-size:11.5pt; margin:0 0 4px; color:#1F4E79; break-after:avoid; page-break-after:avoid}
+  .rep-eti{font-size:8pt; letter-spacing:.06em; text-transform:uppercase; color:#5B6B7D; margin:6px 0 2px; break-after:avoid; page-break-after:avoid}
+  pre.rep-codice, pre.rep-output{
+    font-family:var(--font-mono); font-size:8.6pt; line-height:1.4; margin:0; padding:7px 9px;
+    white-space:pre-wrap; overflow-wrap:anywhere; border:1px solid #CBD4DE; border-radius:4px;
+  }
+  pre.rep-codice{background:#F4F6F9; color:#14202c}
+  pre.rep-output{background:#fff; color:#14202c; break-inside:avoid; page-break-inside:avoid; border-left:3px solid #1F4E79}
+  pre.rep-output.rep-errore{color:#8E2B2B; border-left-color:#B23A3A}
+  #report-stampa .tok-c{color:#1E7B45; font-style:italic}
+  #report-stampa .tok-s{color:#A35A00}
+  #report-stampa .tok-k{color:#6B3FA0; font-weight:700}
+  #report-stampa .tok-b{color:#0B61A4}
+  #report-stampa .tok-n{color:#B3261E}
+  .rep-eventi{display:flex; flex-wrap:wrap; gap:2px 14px; font-family:var(--font-mono); font-size:7.8pt; color:#33414f}
+}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="banner" id="banner-errore-compito" hidden></div>
+
+  <!-- ===================== SCHERMATA RUOLO ===================== -->
+  <div id="schermata-ruolo" class="centro">
+    <div class="scheda">
+      <p class="eyebrow">Campus Da Vinci</p>
+      <h1>Editor Compito Python</h1>
+      <p class="sub">Scrivi, esegui e consegna il codice in un ambiente sorvegliato: uscite dalla pagina, tentativi di copia-incolla e uscite da schermo intero vengono registrati.</p>
+      <div class="scelta-ruolo">
+        <button class="btn btn-primario btn-blocco" id="btn-sono-studente">Sono uno studente</button>
+        <button class="btn btn-secondario btn-blocco" id="btn-sono-docente">Sono il docente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== INGRESSO STUDENTE ===================== -->
+  <div id="schermata-studente-ingresso" class="centro" hidden>
+    <div class="scheda">
+      <p class="eyebrow">Accesso studente</p>
+      <h1>Prima di iniziare</h1>
+      <p class="sub">Inserisci i tuoi dati e il codice del compito che ti ha comunicato il docente. Alla consegna verrà scaricato un file da caricare su Teams.</p>
+      <div class="campo"><label for="in-nome">Nome e cognome</label><input type="text" id="in-nome" autocomplete="off" placeholder="Es. Mario Rossi"></div>
+      <div class="campo"><label for="in-codice">Codice del compito</label><input type="text" id="in-codice" autocomplete="off" placeholder="Es. 4A-15OTT"></div>
+      <div class="errore-campo" id="errore-ingresso-studente"></div>
+      <button class="btn btn-primario btn-blocco" id="btn-avvia-compito">Inizia il compito</button>
+      <div><button class="link-torna" id="btn-ripristina" type="button">Ho un file di backup: riprendi da lì</button></div>
+      <input type="file" id="in-backup" accept=".json,application/json" hidden>
+      <div class="info-backup" id="info-backup"></div>
+      <p class="nota-ingresso">Se la pagina si ricarica o il computer si spegne, rientra con lo stesso nome e codice: il lavoro salvato in automatico viene ripreso. Durante il compito puoi anche scaricare una copia di backup con «Salva copia».</p>
+      <div><button class="link-torna" id="link-torna-1">← torna indietro</button></div>
+    </div>
+  </div>
+
+  <!-- ===================== OVERLAY SCHERMO INTERO INIZIALE ===================== -->
+  <div id="overlay-fullscreen" class="overlay" hidden>
+    <div class="scheda">
+      <p class="eyebrow">Ultimo passaggio</p>
+      <h1>Avvia la modalità a schermo intero</h1>
+      <p class="sub">Il compito si svolge a schermo intero. Se esci, l'uscita viene registrata.</p>
+      <button class="btn btn-primario btn-blocco" id="btn-entra-fullscreen">Avvia il compito</button>
+    </div>
+  </div>
+
+  <!-- ===================== BANCO DI LAVORO STUDENTE ===================== -->
+  <div id="schermata-studente-lavoro" hidden style="flex-direction:column; flex:1; min-height:0">
+    <div id="banner-storage" class="banner" hidden>Il salvataggio automatico non è disponibile in questo browser (navigazione privata?): non ricaricare la pagina durante il compito.</div>
+    <div class="barra-top">
+      <div>
+        <div class="titolo-compito" id="lav-titolo"></div>
+        <div class="meta" id="lav-studente"></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+        <span class="meta" id="lav-salvataggio">salvataggio automatico attivo</span>
+        <button class="btn btn-secondario" id="btn-backup" title="Scarica una copia di sicurezza del tuo lavoro">Salva copia</button>
+        <span class="pill pill-success" id="lav-stato-pill">attivo</span>
+        <button class="btn btn-primario" id="btn-consegna">Consegna</button>
+      </div>
+    </div>
+
+    <div class="banco">
+      <div class="pannello-brief">
+        <h2 id="brief-titolo">Consegna</h2>
+        <div class="corpo-brief" id="brief-corpo"></div>
+      </div>
+      <div class="pannello-editor">
+        <div class="tab-esercizi" id="tab-esercizi"></div>
+        <div class="barra-editor">
+          <strong style="font-size:13.5px" id="editor-nomefile">main.py</strong>
+          <button class="btn btn-secondario" id="btn-esegui">▶ Esegui</button>
+        </div>
+        <div class="riquadro-codice">
+          <div class="gutter" id="gutter">1</div>
+          <div class="editor-stack">
+            <pre id="evidenzia" aria-hidden="true"></pre>
+            <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+          </div>
+        </div>
+        <div class="riquadro-output" id="output"><span class="vuoto">L'output del programma comparirà qui dopo aver premuto Esegui.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== CONFERMA CONSEGNA ===================== -->
+  <div id="schermata-consegnato" class="centro" hidden>
+    <div class="scheda">
+      <p class="eyebrow">Compito consegnato</p>
+      <h1>Ultimo passaggio: carica il file</h1>
+      <p class="sub">Il file con il tuo compito è stato scaricato. <strong>Caricalo ora nella consegna su Teams</strong> e non chiudere questa pagina finché non l'hai fatto.</p>
+      <div class="nome-file" id="nome-file-consegna"></div>
+      <button class="btn btn-secondario btn-blocco" id="btn-riscarica">Scarica di nuovo il file</button>
+      <details class="fallback">
+        <summary>Il download non è partito?</summary>
+        <p>Seleziona tutto il testo qui sotto, copialo e incollalo in un file di testo chiamato come sopra (oppure invialo al docente).</p>
+        <textarea id="testo-fallback" readonly></textarea>
+      </details>
+    </div>
+  </div>
+
+  <!-- ===================== INGRESSO DOCENTE ===================== -->
+  <div id="schermata-docente-password" class="centro" hidden>
+    <div class="scheda">
+      <p class="eyebrow">Accesso docente</p>
+      <h1>Dashboard delle consegne</h1>
+      <p class="sub">Inserisci la password docente per aprire la dashboard.</p>
+      <div class="campo"><label for="in-password">Password</label><input type="password" id="in-password" autocomplete="off"></div>
+      <div class="errore-campo" id="errore-password"></div>
+      <button class="btn btn-primario btn-blocco" id="btn-entra-dashboard">Entra</button>
+      <button class="link-torna" id="link-torna-2">← torna indietro</button>
+    </div>
+  </div>
+
+  <!-- ===================== DASHBOARD DOCENTE ===================== -->
+  <div id="schermata-dashboard" hidden>
+    <div class="barra-top">
+      <div>
+        <div class="titolo-compito">Dashboard delle consegne</div>
+        <div class="meta" id="dash-connessione">nessun file caricato</div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap">
+        <button class="btn btn-secondario" id="btn-svuota">Svuota</button>
+        <button class="btn btn-secondario" id="btn-esporta">Solo testo (.txt)</button>
+        <button class="btn btn-primario" id="btn-pdf">Report PDF</button>
+      </div>
+    </div>
+    <label class="dropzone" id="dropzone" for="in-files">
+      <strong>Trascina qui i file di consegna (.json)</strong>
+      <span>oppure tocca per sceglierli: puoi selezionarne più d'uno insieme</span>
+      <input type="file" id="in-files" accept=".json,application/json" multiple hidden>
+    </label>
+    <div class="errore-campo" id="errore-files"></div>
+    <div class="banner" id="banner-mancanti" hidden></div>
+    <div class="contatore-riepilogo" id="riepilogo"></div>
+    <div class="griglia-studenti" id="griglia-studenti"></div>
+    <div class="vuoto-dashboard" id="dashboard-vuota">Carica i file .json scaricati dagli studenti per vedere le consegne.</div>
+  </div>
+
+  <!-- ===================== PANNELLO DETTAGLIO STUDENTE ===================== -->
+  <div id="dettaglio-sfondo" class="dettaglio-sfondo" hidden>
+    <div class="dettaglio">
+      <button class="link-torna" id="btn-chiudi-dettaglio">← chiudi</button>
+      <h3 id="dett-nome"></h3>
+      <div class="sotto" id="dett-sotto"></div>
+      <div id="dett-esercizi"></div>
+      <strong style="font-size:13px">Registro eventi</strong>
+      <ul class="log-eventi" id="dett-log" style="margin-top:8px"></ul>
+    </div>
+  </div>
+
+  <!-- ===================== MODALE CONFERMA CONSEGNA ===================== -->
+  <div id="modale-consegna-sfondo" class="modale-sfondo" hidden>
+    <div class="modale">
+      <h3>Confermi la consegna?</h3>
+      <p>Dopo la consegna non potrai più modificare il codice. Verrà scaricato un file da caricare su Teams.</p>
+      <div class="azioni">
+        <button class="btn btn-secondario" id="btn-annulla-consegna">Annulla</button>
+        <button class="btn btn-primario" id="btn-conferma-consegna">Consegna</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="avviso-sorveglianza" class="avviso-sorveglianza" hidden></div>
+</div>
+
+<div id="report-stampa"></div>
+
+<script>
+function avviaApp(CONFIG){
+"use strict";
+
+// toglie l'a-capo iniziale/finale dei testi scritti con String.raw`...` in compito.js
+CONFIG.esercizi.forEach(e => {
+  e.testoBrief = e.testoBrief.replace(/^\r?\n/, "").replace(/\s+$/, "");
+  e.templateCodice = e.templateCodice.replace(/^\r?\n/, "").replace(/\s+$/, "") + "\n";
+});
+
+/* ============================================================
+   UTILITA'
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+const nowIso = () => new Date().toISOString();
+function slug(s){ return (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,""); }
+function escapeHtml(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function normNome(s){
+  return (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().split(/\s+/).filter(Boolean).sort().join(" ");
+}
+function formatDurata(ms){
+  if(ms == null || isNaN(ms)) return "—";
+  const s = Math.round(ms / 1000);
+  if(s < 60) return s + " s";
+  const m = Math.floor(s / 60), r = s % 60;
+  return m + " min " + (r < 10 ? "0" : "") + r + " s";
+}
+// hash non crittografico (cyrb53): sigillo anti-modifica casuale, non sicurezza vera
+function cyrb53(str){
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for(let i = 0, ch; i < str.length; i++){
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
+}
+function sigilla(dati){ return cyrb53(JSON.stringify(dati) + "|" + CONFIG.saleSigillo); }
+function scaricaFile(nome, testo, tipo){
+  const blob = new Blob([testo], { type: tipo || "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = nome;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+/* ---------- evidenziazione sintassi Python (editor, dettaglio docente, PDF) ---------- */
+const PY_KW = new Set("False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield".split(" "));
+const PY_BI = new Set("print len range int float str list tuple dict set bool input sum min max abs round sorted reversed enumerate zip map filter open type isinstance any all pow divmod chr ord".split(" "));
+function evidenziaPython(src){
+  src = String(src == null ? "" : src);
+  const n = src.length;
+  let out = "", i = 0;
+  const span = (cls, txt) => '<span class="' + cls + '">' + escapeHtml(txt) + '</span>';
+  while(i < n){
+    const c = src[i];
+    if(c === "#"){                                   // commento: fino a fine riga
+      let j = src.indexOf("\n", i); if(j === -1) j = n;
+      out += span("tok-c", src.slice(i, j)); i = j; continue;
+    }
+    const mstr = /^(?:[rRbBuUfF]{1,2})?("""|'''|"|')/.exec(src.slice(i, i + 5));
+    if(mstr){                                        // stringa (anche tripla e con prefisso)
+      const q = mstr[1];
+      let j = i + mstr[0].length;
+      while(j < n){
+        if(src[j] === "\\"){ j += 2; continue; }
+        if(src.startsWith(q, j)){ j += q.length; break; }
+        if(q.length === 1 && src[j] === "\n") break;  // stringa non chiusa: finisce a fine riga
+        j++;
+      }
+      if(j > n) j = n;
+      out += span("tok-s", src.slice(i, j)); i = j; continue;
+    }
+    if(/[A-Za-z_]/.test(c)){                         // parola chiave, funzione predefinita o nome
+      let j = i + 1;
+      while(j < n && /[A-Za-z0-9_]/.test(src[j])) j++;
+      const w = src.slice(i, j);
+      out += PY_KW.has(w) ? span("tok-k", w) : (PY_BI.has(w) ? span("tok-b", w) : escapeHtml(w));
+      i = j; continue;
+    }
+    if(/[0-9]/.test(c) || (c === "." && /[0-9]/.test(src[i + 1] || ""))){   // numero
+      const mnum = /^(?:0[xX][0-9a-fA-F_]+|(?:\d[\d_]*\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)/.exec(src.slice(i, i + 40));
+      if(mnum){ out += span("tok-n", mnum[0]); i += mnum[0].length; continue; }
+    }
+    out += escapeHtml(c); i++;
+  }
+  return out;
+}
+
+/* ============================================================
+   NAVIGAZIONE SCHERMATE
+   ============================================================ */
+const schermate = [
+  "schermata-ruolo","schermata-studente-ingresso","schermata-studente-lavoro",
+  "schermata-consegnato","schermata-docente-password","schermata-dashboard",
+];
+function mostra(id){
+  schermate.forEach(s => {
+    const el = $(s);
+    el.hidden = (s !== id);
+    if(s === "schermata-studente-lavoro") el.style.display = (s === id) ? "flex" : "";
+  });
+}
+$("btn-sono-studente").addEventListener("click", () => mostra("schermata-studente-ingresso"));
+$("btn-sono-docente").addEventListener("click", () => mostra("schermata-docente-password"));
+$("link-torna-1").addEventListener("click", () => mostra("schermata-ruolo"));
+$("link-torna-2").addEventListener("click", () => mostra("schermata-ruolo"));
+
+/* ============================================================
+   STUDENTE: STATO E SALVATAGGIO LOCALE
+   ============================================================ */
+let inEditorScreen = false;
+let focused = true;
+let consegnato = false;
+let fullscreenAttivo = false;
+let contaUscite = 0;
+let contaCopiaIncolla = 0;
+let eventLog = [];
+let saveTimer = null, avvisoTimer = null;
+let nomeStudente = "", codiceSessione = "";
+let iniziato = null, oraConsegna = null;
+let fileConsegnaTesto = "", fileConsegnaNome = "";
+let codiceEsercizi = [];   // codice corrente di ogni esercizio (array parallelo a CONFIG.esercizi)
+let indiceAttivo = 0;      // esercizio mostrato ora nell'editor
+let storageOk = true;
+
+function chiaveStorage(){ return "ec1:" + slug(codiceSessione) + ":" + slug(nomeStudente); }
+function leggiStorage(k){
+  try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }
+  catch(e){ storageOk = false; return null; }
+}
+function scriviStorage(k, obj){
+  try{ localStorage.setItem(k, JSON.stringify(obj)); }
+  catch(e){ storageOk = false; }
+}
+function verificaStorage(){
+  try{ localStorage.setItem("ec1:test", "1"); localStorage.removeItem("ec1:test"); storageOk = true; }
+  catch(e){ storageOk = false; }
+  $("banner-storage").hidden = storageOk;
+}
+
+function logEvento(tipo){
+  eventLog.push({tipo, orario: nowIso()});
+  if(eventLog.length > 500) eventLog.splice(1, 1);   // tiene sempre l'evento "inizio"
+}
+
+function mostraAvviso(msg, persistente, ok){
+  const el = $("avviso-sorveglianza");
+  el.className = "avviso-sorveglianza" + (ok ? " avviso-ok" : "");
+  el.textContent = msg;
+  el.hidden = false;
+  if(avvisoTimer) clearTimeout(avvisoTimer);
+  if(!persistente){ avvisoTimer = setTimeout(() => { el.hidden = true; }, 4500); }
+}
+function nascondiAvviso(){
+  $("avviso-sorveglianza").hidden = true;
+  if(avvisoTimer) clearTimeout(avvisoTimer);
+}
+
+function aggiornaPillStato(){
+  const pill = $("lav-stato-pill");
+  if(consegnato){ pill.className = "pill pill-neutro"; pill.textContent = "consegnato"; return; }
+  if(!focused){ pill.className = "pill pill-danger"; pill.textContent = "fuori dalla pagina"; return; }
+  pill.className = "pill pill-success"; pill.textContent = "attivo";
+}
+
+function codiceEserciziCorrente(){
+  // l'array dei codici di tutti gli esercizi, con l'ultima modifica
+  // dell'esercizio aperto adesso inclusa (non ancora "scaricata" dal tab)
+  const arr = codiceEsercizi.slice();
+  if(inEditorScreen && !consegnato) arr[indiceAttivo] = editorEl.value;
+  return arr;
+}
+function salvaLocale(){
+  if(!nomeStudente || !codiceSessione) return;
+  scriviStorage(chiaveStorage(), {
+    nome: nomeStudente, sessione: codiceSessione, iniziato,
+    contaUscite, contaCopiaIncolla, eventi: eventLog, codice: codiceEserciziCorrente(),
+    consegnato, oraConsegna, fileConsegnaTesto, fileConsegnaNome,
+  });
+  const lab = $("lav-salvataggio");
+  if(lab) lab.textContent = storageOk ? "salvato alle " + new Date().toLocaleTimeString("it-IT") : "salvataggio automatico non disponibile";
+}
+function scheduleSave(immediate){
+  if(saveTimer) clearTimeout(saveTimer);
+  if(immediate){ salvaLocale(); return; }
+  saveTimer = setTimeout(salvaLocale, 800);
+}
+
+function setFocus(nuovoFocus){
+  if(!inEditorScreen || consegnato) return;
+  if(nuovoFocus === focused) return;
+  focused = nuovoFocus;
+  aggiornaPillStato();
+  if(!focused){
+    contaUscite++;
+    logEvento("uscita_pagina");
+    mostraAvviso("Sei uscito dalla pagina del compito (uscita #" + contaUscite + "). Rientra subito.");
+  }else{
+    logEvento("rientro_pagina");
+    nascondiAvviso();
+  }
+  scheduleSave(true);
+}
+document.addEventListener("visibilitychange", () => setFocus(!document.hidden));
+window.addEventListener("blur", () => setFocus(false));
+window.addEventListener("focus", () => setFocus(true));
+
+["copy","cut","paste"].forEach(evt => {
+  document.addEventListener(evt, (e) => {
+    if(!inEditorScreen || consegnato) return;
+    e.preventDefault();
+    contaCopiaIncolla++;
+    logEvento("tentativo_" + evt);
+    mostraAvviso("Copia e incolla disabilitati durante il compito.");
+    scheduleSave(true);
+  });
+});
+document.addEventListener("contextmenu", (e) => { if(inEditorScreen && !consegnato) e.preventDefault(); });
+document.addEventListener("drop", (e) => { if(inEditorScreen && !consegnato){ e.preventDefault(); } });
+document.addEventListener("dragover", (e) => { if(inEditorScreen && !consegnato){ e.preventDefault(); } });
+document.addEventListener("keydown", (e) => {
+  if(!inEditorScreen || consegnato) return;
+  const k = e.key ? e.key.toLowerCase() : "";
+  const combo = (e.ctrlKey || e.metaKey);
+  if(k === "f12" || (combo && e.shiftKey && (k === "i" || k === "j" || k === "c")) || (combo && k === "u")){
+    e.preventDefault();
+    logEvento("tentativo_devtools");
+    scheduleSave(true);
+  }
+});
+window.addEventListener("beforeunload", (e) => {
+  if(inEditorScreen && !consegnato){ e.preventDefault(); e.returnValue = ""; }
+});
+// rete di sicurezza: salva anche mentre si lavora, senza dipendere solo dal "digita"
+setInterval(() => { if(inEditorScreen && !consegnato) salvaLocale(); }, 15000);
+
+function entraFullscreen(){
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen;
+  if(req){
+    try{
+      const p = req.call(el);
+      if(p && p.then){ p.then(() => { fullscreenAttivo = true; }).catch(() => { fullscreenAttivo = false; }); }
+    }catch(e){ fullscreenAttivo = false; }
+  }
+}
+document.addEventListener("fullscreenchange", () => {
+  const isFs = !!document.fullscreenElement;
+  if(!inEditorScreen || consegnato || !fullscreenAttivo) return;
+  if(!isFs){
+    logEvento("uscita_fullscreen");
+    mostraAvviso("Sei uscito dalla modalità a schermo intero. Rientra per continuare.", true);
+    scheduleSave(true);
+  }else{
+    nascondiAvviso();
+  }
+});
+
+/* ---------- editor: numeri di riga + tab ---------- */
+const editorEl = $("editor"), gutterEl = $("gutter"), evidEl = $("evidenzia");
+function sincronizzaScorrimento(){
+  gutterEl.scrollTop = editorEl.scrollTop;
+  evidEl.style.transform = "translate(" + (-editorEl.scrollLeft) + "px," + (-editorEl.scrollTop) + "px)";
+}
+function aggiornaGutter(){
+  const righe = editorEl.value.split("\n").length;
+  let out = "";
+  for(let i = 1; i <= righe; i++) out += i + "\n";
+  gutterEl.textContent = out;
+  evidEl.innerHTML = evidenziaPython(editorEl.value) + "\n";   // a-capo finale: l'ultima riga vuota conta
+  sincronizzaScorrimento();
+}
+editorEl.addEventListener("input", () => { aggiornaGutter(); scheduleSave(); });
+editorEl.addEventListener("scroll", sincronizzaScorrimento);
+editorEl.addEventListener("keydown", (e) => {
+  if(e.key === "Tab"){
+    e.preventDefault();
+    const start = editorEl.selectionStart, end = editorEl.selectionEnd;
+    editorEl.value = editorEl.value.slice(0, start) + "    " + editorEl.value.slice(end);
+    editorEl.selectionStart = editorEl.selectionEnd = start + 4;
+    aggiornaGutter();
+    scheduleSave();
+  }
+});
+
+/* ---------- ingresso studente ---------- */
+$("btn-avvia-compito").addEventListener("click", () => {
+  const nome = $("in-nome").value.trim();
+  const codice = $("in-codice").value.trim();
+  const err = $("errore-ingresso-studente");
+  if(!nome || nome.length < 3){ err.textContent = "Inserisci nome e cognome."; return; }
+  if(!codice){ err.textContent = "Inserisci il codice del compito."; return; }
+  err.textContent = "";
+  nomeStudente = nome; codiceSessione = codice;
+  verificaStorage();
+  const templateIniziale = CONFIG.esercizi.map(e => e.templateCodice);
+
+  const salvatoLocale = leggiStorage(chiaveStorage());
+  // compito già consegnato su questo dispositivo: ripropone il file
+  if(salvatoLocale && salvatoLocale.consegnato && salvatoLocale.fileConsegnaTesto){
+    consegnato = true;
+    fileConsegnaTesto = salvatoLocale.fileConsegnaTesto;
+    fileConsegnaNome = salvatoLocale.fileConsegnaNome || "consegna.json";
+    mostraSchermataConsegnato();
+    return;
+  }
+  consegnato = false; focused = true; indiceAttivo = 0;
+  // se lo studente ha caricato un file di backup valido per questo nome e codice, parte da quello
+  let salvato = salvatoLocale, daBackup = false;
+  if(statoDaBackup && normNome(statoDaBackup.nome) === normNome(nome) && statoDaBackup.sessione === codice){
+    salvato = statoDaBackup; daBackup = true;
+  }
+  statoDaBackup = null;
+  // ricarica della pagina a metà compito: riprende da dove era rimasto
+  if(salvato && Array.isArray(salvato.codice) && salvato.codice.length === CONFIG.esercizi.length){
+    iniziato = salvato.iniziato || nowIso();
+    eventLog = Array.isArray(salvato.eventi) ? salvato.eventi : [];
+    contaUscite = salvato.contaUscite || 0;
+    contaCopiaIncolla = salvato.contaCopiaIncolla || 0;
+    codiceEsercizi = salvato.codice;
+    logEvento(daBackup ? "ripristino_da_backup" : "ripresa");
+  }else{
+    iniziato = nowIso();
+    eventLog = [{ tipo: "inizio", orario: iniziato }];
+    contaUscite = 0; contaCopiaIncolla = 0;
+    codiceEsercizi = templateIniziale;
+  }
+  salvaLocale();
+  preparaAmbiente();   // precarica l'interprete mentre lo studente si prepara
+  $("overlay-fullscreen").hidden = false;
+});
+
+$("btn-entra-fullscreen").addEventListener("click", () => {
+  entraFullscreen();
+  $("overlay-fullscreen").hidden = true;
+  mostra("schermata-studente-lavoro");
+  avviaBancoLavoro();
+});
+
+function costruisciTabEsercizi(){
+  const cont = $("tab-esercizi");
+  cont.innerHTML = "";
+  CONFIG.esercizi.forEach((es, i) => {
+    const b = document.createElement("button");
+    b.className = "tab-esercizio" + (i === indiceAttivo ? " attivo" : "");
+    b.textContent = "Esercizio " + (i + 1);
+    b.addEventListener("click", () => cambiaEsercizio(i));
+    cont.appendChild(b);
+  });
+}
+function aggiornaBriefEEditor(){
+  const es = CONFIG.esercizi[indiceAttivo];
+  $("brief-titolo").textContent = es.titolo;
+  $("brief-corpo").textContent = es.testoBrief;
+  $("editor-nomefile").textContent = "esercizio_" + (indiceAttivo + 1) + ".py";
+  editorEl.value = codiceEsercizi[indiceAttivo];
+  aggiornaGutter();
+  $("output").innerHTML = '<span class="vuoto">L\'output del programma comparirà qui dopo aver premuto Esegui.</span>';
+}
+function cambiaEsercizio(i){
+  if(i === indiceAttivo) return;
+  codiceEsercizi[indiceAttivo] = editorEl.value;
+  indiceAttivo = i;
+  costruisciTabEsercizi();
+  aggiornaBriefEEditor();
+  scheduleSave();
+}
+
+function avviaBancoLavoro(){
+  inEditorScreen = true;
+  indiceAttivo = 0;
+  $("lav-titolo").textContent = CONFIG.titoloCompito;
+  $("lav-studente").textContent = nomeStudente + " · " + codiceSessione;
+  costruisciTabEsercizi();
+  aggiornaBriefEEditor();
+  aggiornaPillStato();
+}
+
+/* ---------- motore Python: Skulpt (predefinito) oppure Pyodide (con numpy) ---------- */
+const USA_PYODIDE = (CONFIG.motore === "pyodide");
+const LIMITE_OUTPUT = 20000;
+function tagliaOutput(t){
+  t = String(t == null ? "" : t);
+  return t.length > LIMITE_OUTPUT ? t.slice(0, LIMITE_OUTPUT) + "\n… (output troncato)" : t;
+}
+function aCapoSeServe(t){ return (t && !t.endsWith("\n")) ? "\n" : ""; }
+
+/* --- Skulpt: Python puro, eseguito nella pagina (copia locale con ripiego su CDN) --- */
+let skulptCaricato = false, skulptPromessa = null;
+function caricaScript(src){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error("caricamento fallito: " + src));
+    document.head.appendChild(s);
+  });
+}
+function caricaSkulpt(){
+  if(skulptCaricato) return Promise.resolve();
+  if(skulptPromessa) return skulptPromessa;
+  const sorgenti = [
+    ["skulpt/skulpt.min.js", "skulpt/skulpt-stdlib.js"],
+    ["https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js", "https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"],
+  ];
+  skulptPromessa = (async () => {
+    let ultimo = null;
+    for(const [a, b] of sorgenti){
+      try{ await caricaScript(a); await caricaScript(b); skulptCaricato = true; return; }
+      catch(e){ ultimo = e; }
+    }
+    skulptPromessa = null;
+    throw ultimo;
+  })();
+  return skulptPromessa;
+}
+// toglie dalla libreria di Skulpt i moduli che toccano la pagina o la rete
+function bloccaModuliSkulpt(){
+  const f = window.Sk && window.Sk.builtinFiles && window.Sk.builtinFiles.files;
+  if(!f) return;
+  const vietati = /^src\/lib\/(document|webgl|processing|turtle|image|socket|ssl|urllib|urllib2|httplib|ftplib|smtplib|webbrowser|subprocess|multiprocessing|xmlrpclib|telnetlib|imaplib|poplib|nntplib)(\.js|\.py|\/)/;
+  Object.keys(f).forEach((k) => { if(vietati.test(k)) delete f[k]; });
+}
+async function eseguiSkulpt(codice, limiteMs){
+  await caricaSkulpt();
+  bloccaModuliSkulpt();
+  let buffer = "";
+  window.Sk.configure({
+    output: (t) => { buffer += t; },
+    read: (x) => {
+      if(window.Sk.builtinFiles === undefined || window.Sk.builtinFiles["files"][x] === undefined)
+        throw "File non trovato: '" + x + "'";
+      return window.Sk.builtinFiles["files"][x];
+    },
+    __future__: window.Sk.python3,
+    inputfun: () => "",
+    inputfunTakesPrompt: true,
+  });
+  window.Sk.execLimit = limiteMs || 8000;
+  try{
+    await window.Sk.misceval.asyncToPromise(() => window.Sk.importMainWithBody("<stdin>", false, codice, true));
+    return { output: tagliaOutput(buffer), errore: false };
+  }catch(err){
+    return { output: tagliaOutput(buffer + aCapoSeServe(buffer) + err.toString()), errore: true };
+  }
+}
+
+/* --- Pyodide: Python completo con numpy/pandas, eseguito in un Web Worker (si può interrompere) --- */
+function corpoWorker(BASE){
+  let py = null;
+  self.onmessage = async (ev) => {
+    const m = ev.data;
+    try{
+      if(m.tipo === "init"){
+        const mod = await import(BASE + "pyodide.mjs");
+        py = await mod.loadPyodide({ indexURL: BASE });
+        py.setStdin({ stdin: () => undefined });          // input() non supportato
+        if(m.pacchetti.length) await py.loadPackage(m.pacchetti, { messageCallback: () => {}, errorCallback: () => {} });
+        self.postMessage({ id: m.id, ok: true });
+      }else if(m.tipo === "run"){
+        let out = "";
+        py.setStdout({ batched: (s) => { out += s + "\n"; } });
+        py.setStderr({ batched: (s) => { out += s + "\n"; } });
+        const g = py.globals.get("dict")();
+        let errore = null;
+        try{
+          await py.loadPackagesFromImports(m.codice, { messageCallback: () => {}, errorCallback: () => {} });
+          await py.runPythonAsync(m.codice, { globals: g });
+        }catch(e){
+          let msg = String((e && e.message) || e);
+          const k = msg.indexOf('File "<exec>"');
+          if(k > 0) msg = "Traceback (most recent call last):\n  " + msg.slice(k);
+          errore = msg.trim();
+        }
+        g.destroy();
+        self.postMessage({ id: m.id, ok: true, output: out, errore: errore });
+      }
+    }catch(e){
+      self.postMessage({ id: m.id, ok: false, errore: String((e && e.message) || e) });
+    }
+  };
+}
+let pyWorker = null, pyPronto = null, pyProntoFatto = false, pyId = 0;
+const pyPendenti = new Map();
+function terminaWorkerPyodide(motivo){
+  if(pyWorker){ pyWorker.terminate(); pyWorker = null; }
+  pyPronto = null; pyProntoFatto = false;
+  pyPendenti.forEach((res) => res({ ok: false, errore: motivo || "Esecuzione interrotta" }));
+  pyPendenti.clear();
+}
+function chiamaWorker(msg){
+  return new Promise((resolve) => {
+    const id = ++pyId;
+    pyPendenti.set(id, resolve);
+    pyWorker.postMessage(Object.assign({ id }, msg));
+  });
+}
+function avviaWorkerPyodide(){
+  if(pyPronto) return pyPronto;
+  if(location.protocol === "file:")
+    return Promise.reject(new Error("Il motore con numpy funziona solo con la pagina pubblicata su un indirizzo web, non aprendo il file dal computer."));
+  const base = new URL("pyodide/", location.href).href;
+  const blob = new Blob(["(" + corpoWorker.toString() + ")(" + JSON.stringify(base) + ");"], { type: "text/javascript" });
+  pyWorker = new Worker(URL.createObjectURL(blob), { type: "module" });
+  pyWorker.onmessage = (ev) => {
+    const res = pyPendenti.get(ev.data.id);
+    if(res){ pyPendenti.delete(ev.data.id); res(ev.data); }
+  };
+  pyWorker.onerror = () => terminaWorkerPyodide("Impossibile caricare l'ambiente Python (mancano i file nella cartella pyodide/?)");
+  const p = chiamaWorker({ tipo: "init", pacchetti: CONFIG.pacchetti || [] }).then((m) => {
+    if(!m.ok) throw new Error(m.errore || "avvio non riuscito");
+    pyProntoFatto = true;
+  });
+  pyPronto = p;
+  p.catch(() => { if(pyPronto === p) terminaWorkerPyodide(); });
+  return p;
+}
+async function eseguiPyodide(codice, limiteMs){
+  await avviaWorkerPyodide();
+  const limite = limiteMs || 10000;
+  let scaduto = false;
+  const timer = setTimeout(() => { scaduto = true; terminaWorkerPyodide("Esecuzione interrotta"); }, limite);
+  const m = await chiamaWorker({ tipo: "run", codice });
+  clearTimeout(timer);
+  if(scaduto)
+    return { output: "Esecuzione interrotta: il programma ha impiegato più di " + Math.round(limite / 1000) + " secondi (ciclo infinito?).", errore: true };
+  if(!m.ok) return { output: tagliaOutput(m.errore || "errore"), errore: true };
+  const out = m.output || "";
+  return { output: tagliaOutput(m.errore ? out + aCapoSeServe(out) + m.errore : out), errore: !!m.errore };
+}
+
+/* --- interfaccia comune --- */
+function eseguiPython(codice, limiteMs){ return USA_PYODIDE ? eseguiPyodide(codice, limiteMs) : eseguiSkulpt(codice, limiteMs); }
+function ambientePronto(){ return USA_PYODIDE ? pyProntoFatto : skulptCaricato; }
+function preparaAmbiente(){ (USA_PYODIDE ? avviaWorkerPyodide() : caricaSkulpt()).catch(() => {}); }
+
+function scriviOutput(testo, errore){
+  const el = $("output");
+  el.innerHTML = "";
+  const span = document.createElement("span");
+  if(errore) span.className = "riga-errore";
+  span.textContent = testo || "(nessun output)";
+  el.appendChild(span);
+}
+$("btn-esegui").addEventListener("click", async () => {
+  const btn = $("btn-esegui");
+  btn.disabled = true;
+  const testoOriginale = btn.textContent;
+  btn.textContent = ambientePronto() ? "Esecuzione…" : "Caricamento ambiente…";
+  try{
+    const r = await eseguiPython(editorEl.value, 10000);
+    scriviOutput(r.output, r.errore);
+  }catch(e){
+    scriviOutput("Impossibile avviare l'ambiente Python: " + ((e && e.message) || e), true);
+  }
+  btn.disabled = false;
+  btn.textContent = testoOriginale;
+});
+
+/* ---------- consegna ---------- */
+$("btn-consegna").addEventListener("click", () => { $("modale-consegna-sfondo").hidden = false; });
+$("btn-annulla-consegna").addEventListener("click", () => { $("modale-consegna-sfondo").hidden = true; });
+function costruisciDati(extra){
+  return Object.assign({
+    nome: nomeStudente, sessione: codiceSessione, titoloCompito: CONFIG.titoloCompito,
+    iniziato, oraConsegna: null, contaUscite, contaCopiaIncolla,
+    eventi: eventLog, codice: codiceEserciziCorrente(),
+  }, extra || {});
+}
+function incartaFile(dati){
+  return JSON.stringify({ formato: "editor-compito-v1", dati, sigillo: sigilla(dati) }, null, 2);
+}
+$("btn-conferma-consegna").addEventListener("click", async () => {
+  $("modale-consegna-sfondo").hidden = true;
+  codiceEsercizi = codiceEserciziCorrente();
+  logEvento("consegna");
+  oraConsegna = nowIso();
+  consegnato = true;
+  inEditorScreen = false;
+  aggiornaPillStato();
+  $("btn-consegna").disabled = true;
+  mostraAvviso("Sto preparando la consegna…", true, true);
+  // esegue il codice di ogni esercizio e ne conserva l'output nel file (sigillato)
+  const output = [];
+  for(const cod of codiceEsercizi){
+    try{
+      const r = await eseguiPython(cod, 6000);
+      output.push({ output: r.output, errore: !!r.errore });
+    }catch(e){
+      output.push({ output: "", errore: true, nonDisponibile: true });
+    }
+  }
+  nascondiAvviso();
+  fileConsegnaTesto = incartaFile(costruisciDati({ oraConsegna, output }));
+  fileConsegnaNome = "consegna_" + slug(nomeStudente) + "_" + slug(codiceSessione) + ".json";
+  salvaLocale();
+  if(document.fullscreenElement && document.exitFullscreen){ document.exitFullscreen().catch(() => {}); }
+  scaricaFile(fileConsegnaNome, fileConsegnaTesto, "application/json");
+  mostraSchermataConsegnato();
+});
+function mostraSchermataConsegnato(){
+  $("nome-file-consegna").textContent = fileConsegnaNome;
+  $("testo-fallback").value = fileConsegnaTesto;
+  mostra("schermata-consegnato");
+}
+$("btn-riscarica").addEventListener("click", () => {
+  scaricaFile(fileConsegnaNome, fileConsegnaTesto, "application/json");
+});
+
+/* ---------- backup provvisorio: copia scaricabile e ripristino ---------- */
+let statoDaBackup = null;
+$("btn-backup").addEventListener("click", () => {
+  if(!inEditorScreen || consegnato) return;
+  logEvento("backup_scaricato");
+  salvaLocale();
+  const adesso = new Date();
+  const hhmm = String(adesso.getHours()).padStart(2, "0") + String(adesso.getMinutes()).padStart(2, "0");
+  const dati = costruisciDati({ provvisorio: true, copiaDel: nowIso() });
+  scaricaFile("backup_" + slug(nomeStudente) + "_" + slug(codiceSessione) + "_" + hhmm + ".json", incartaFile(dati), "application/json");
+  mostraAvviso("Copia di backup scaricata.", false, true);
+});
+$("btn-ripristina").addEventListener("click", () => { $("in-backup").click(); });
+$("in-backup").addEventListener("change", async (e) => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  const err = $("errore-ingresso-studente"), info = $("info-backup");
+  info.textContent = "";
+  if(!f) return;
+  try{
+    const obj = JSON.parse(await f.text());
+    const d = obj && obj.dati;
+    if(!obj || obj.formato !== "editor-compito-v1" || !d || !Array.isArray(d.codice)) throw new Error("formato");
+    if(obj.sigillo !== sigilla(d)){ err.textContent = "Il file di backup risulta modificato o non valido."; return; }
+    if(!d.provvisorio){ err.textContent = "Questo file è una consegna, non un backup."; return; }
+    if(d.codice.length !== CONFIG.esercizi.length){ err.textContent = "Il backup non corrisponde a questo compito."; return; }
+    statoDaBackup = {
+      nome: d.nome, sessione: d.sessione, iniziato: d.iniziato,
+      contaUscite: d.contaUscite || 0, contaCopiaIncolla: d.contaCopiaIncolla || 0,
+      eventi: Array.isArray(d.eventi) ? d.eventi : [], codice: d.codice, consegnato: false,
+    };
+    $("in-nome").value = d.nome || "";
+    $("in-codice").value = d.sessione || "";
+    err.textContent = "";
+    info.textContent = "Backup caricato: premi «Inizia il compito» per riprendere da lì.";
+  }catch(ex){
+    err.textContent = "Non riesco a leggere il file di backup.";
+  }
+});
+
+/* ============================================================
+   DOCENTE
+   ============================================================ */
+let consegne = [];   // [{ dati, sigilloOk, nomeFile }]
+
+$("btn-entra-dashboard").addEventListener("click", () => {
+  const pwd = $("in-password").value;
+  const err = $("errore-password");
+  if(pwd !== CONFIG.passwordDocente){ err.textContent = "Password errata."; return; }
+  err.textContent = "";
+  mostra("schermata-dashboard");
+  disegnaDashboard();
+});
+
+async function leggiFile(f){
+  try{
+    const obj = JSON.parse(await f.text());
+    if(!obj || obj.formato !== "editor-compito-v1" || !obj.dati) throw new Error("formato");
+    const d = obj.dati;
+    if(typeof d.nome !== "string" || !Array.isArray(d.codice)) throw new Error("formato");
+    const sigilloOk = (obj.sigillo === sigilla(d));   // prima di qualsiasi normalizzazione
+    if(!Array.isArray(d.eventi)) d.eventi = [];
+    if(!Array.isArray(d.output)) d.output = null;
+    return { ok: true, record: { dati: d, sigilloOk, nomeFile: f.name } };
+  }catch(e){
+    return { ok: false, nomeFile: f.name };
+  }
+}
+async function caricaFiles(lista){
+  const files = Array.from(lista || []);
+  if(!files.length) return;
+  const scartati = [];
+  for(const f of files){
+    const r = await leggiFile(f);
+    if(!r.ok){ scartati.push(r.nomeFile); continue; }
+    // una sola consegna per studente e sessione: tiene la più recente
+    const chiave = normNome(r.record.dati.nome) + "|" + r.record.dati.sessione;
+    const idx = consegne.findIndex(c => normNome(c.dati.nome) + "|" + c.dati.sessione === chiave);
+    if(idx === -1){ consegne.push(r.record); }
+    else if((r.record.dati.oraConsegna || "") >= (consegne[idx].dati.oraConsegna || "")){ consegne[idx] = r.record; }
+  }
+  $("errore-files").textContent = scartati.length
+    ? "File non riconosciuti (ignorati): " + scartati.join(", ")
+    : "";
+  disegnaDashboard();
+}
+$("in-files").addEventListener("change", async (e) => {
+  await caricaFiles(e.target.files);
+  e.target.value = "";
+});
+const dz = $("dropzone");
+["dragenter","dragover"].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add("sopra"); }));
+["dragleave","drop"].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove("sopra"); }));
+dz.addEventListener("drop", (e) => { caricaFiles(e.dataTransfer && e.dataTransfer.files); });
+$("btn-svuota").addEventListener("click", () => {
+  consegne = [];
+  $("errore-files").textContent = "";
+  disegnaDashboard();
+});
+
+function analizza(d){
+  let fuoriMs = 0, inizioFuori = null, uscFs = 0, devtools = 0, ricariche = 0;
+  (d.eventi || []).forEach(ev => {
+    const t = new Date(ev.orario).getTime();
+    if(ev.tipo === "uscita_pagina"){ if(inizioFuori === null) inizioFuori = t; }
+    else if(ev.tipo === "rientro_pagina" || ev.tipo === "ripresa" || ev.tipo === "ripristino_da_backup" || ev.tipo === "consegna"){
+      if(inizioFuori !== null && !isNaN(t)){ fuoriMs += t - inizioFuori; }
+      inizioFuori = null;
+    }
+    if(ev.tipo === "uscita_fullscreen") uscFs++;
+    if(ev.tipo === "tentativo_devtools") devtools++;
+    if(ev.tipo === "ripresa" || ev.tipo === "ripristino_da_backup") ricariche++;
+  });
+  const durata = (d.oraConsegna && d.iniziato) ? (new Date(d.oraConsegna) - new Date(d.iniziato)) : null;
+  const irregolare = (d.contaUscite || 0) > 0 || (d.contaCopiaIncolla || 0) > 0 || uscFs > 0 || devtools > 0;
+  return { fuoriMs, uscFs, devtools, ricariche, durata, irregolare };
+}
+function statoConsegna(c){
+  const a = analizza(c.dati);
+  if(!c.sigilloOk) return { label: "File modificato", cls: "pill-danger", ordine: 0, a };
+  if(c.dati.provvisorio) return { label: "Backup non consegnato", cls: "pill-warning", ordine: 1, a };
+  if(a.irregolare) return { label: "Da controllare", cls: "pill-warning", ordine: 1, a };
+  return { label: "Regolare", cls: "pill-success", ordine: 2, a };
+}
+function statino(num, lab){
+  return '<div class="statino"><div class="num">' + num + '</div><div class="lab">' + lab + '</div></div>';
+}
+
+function disegnaDashboard(){
+  const griglia = $("griglia-studenti");
+  griglia.innerHTML = "";
+  $("dashboard-vuota").hidden = consegne.length > 0;
+  $("dash-connessione").textContent = consegne.length
+    ? consegne.length + (consegne.length === 1 ? " consegna caricata" : " consegne caricate")
+    : "nessun file caricato";
+
+  const stati = consegne.map(statoConsegna);
+  const nControllo = stati.filter(s => s.ordine <= 1).length;
+  const totUscite = consegne.reduce((a, c) => a + (c.dati.contaUscite || 0), 0);
+  const totCopia = consegne.reduce((a, c) => a + (c.dati.contaCopiaIncolla || 0), 0);
+  $("riepilogo").innerHTML =
+    statino(consegne.length, "consegne") +
+    statino(nControllo, "da controllare") +
+    statino(totUscite, "uscite totali") +
+    statino(totCopia, "tentativi copia/incolla");
+
+  // chi manca all'appello (solo se l'elenco classe è compilato)
+  const banner = $("banner-mancanti");
+  if(CONFIG.elencoClasse.length){
+    const presenti = new Set(consegne.map(c => normNome(c.dati.nome)));
+    const mancanti = CONFIG.elencoClasse.filter(n => !presenti.has(normNome(n)));
+    banner.hidden = false;
+    banner.textContent = mancanti.length
+      ? (mancanti.length === 1 ? "Manca 1 consegna: " : "Mancano " + mancanti.length + " consegne: ") + mancanti.join(", ")
+      : "Tutte le consegne dell'elenco classe sono arrivate.";
+  }else{
+    banner.hidden = true;
+  }
+
+  const sessioni = new Set(consegne.map(c => c.dati.sessione));
+  consegne
+    .map((c, i) => ({ c, s: stati[i] }))
+    .sort((x, y) => (x.s.ordine - y.s.ordine) || (x.c.dati.nome || "").localeCompare(y.c.dati.nome || ""))
+    .forEach(({ c, s }) => {
+      const d = c.dati, a = s.a;
+      const card = document.createElement("div");
+      card.className = "scheda-studente";
+      card.innerHTML =
+        '<div class="nome">' + escapeHtml(d.nome || "(senza nome)") + '</div>' +
+        '<span class="pill ' + s.cls + '">' + s.label + '</span>' +
+        (sessioni.size > 1 ? '<div class="riga-stat"><span>Compito</span><b>' + escapeHtml(d.sessione) + '</b></div>' : '') +
+        '<div class="riga-stat"><span>Uscite dalla pagina</span><b>' + (d.contaUscite || 0) + '</b></div>' +
+        '<div class="riga-stat"><span>Tempo fuori pagina</span><b>' + formatDurata(a.fuoriMs) + '</b></div>' +
+        '<div class="riga-stat"><span>Tentativi copia/incolla</span><b>' + (d.contaCopiaIncolla || 0) + '</b></div>' +
+        '<div class="riga-stat"><span>Durata compito</span><b>' + formatDurata(a.durata) + '</b></div>';
+      card.addEventListener("click", () => apriDettaglio(c));
+      griglia.appendChild(card);
+    });
+}
+
+function apriDettaglio(c){
+  const d = c.dati, a = analizza(d);
+  $("dett-nome").textContent = d.nome || "(senza nome)";
+  const ora = (iso) => iso ? new Date(iso).toLocaleTimeString("it-IT") : "—";
+  $("dett-sotto").textContent =
+    "Dalle " + ora(d.iniziato) + " alle " + ora(d.oraConsegna) + " · durata " + formatDurata(a.durata) +
+    " · fuori pagina " + formatDurata(a.fuoriMs) +
+    (a.uscFs ? " · uscite da schermo intero: " + a.uscFs : "") +
+    (a.devtools ? " · tentativi devtools: " + a.devtools : "") +
+    (a.ricariche ? " · ricariche pagina: " + a.ricariche : "") +
+    (c.sigilloOk ? "" : " · ATTENZIONE: il file risulta modificato dopo la consegna") +
+    " · file: " + c.nomeFile;
+  const cont = $("dett-esercizi");
+  cont.innerHTML = "";
+  (d.codice || []).forEach((cod, i) => {
+    const titolo = (CONFIG.esercizi[i] && CONFIG.esercizi[i].titolo) || ("Esercizio " + (i + 1));
+    const h = document.createElement("strong");
+    h.style.fontSize = "13px";
+    h.textContent = titolo;
+    const pre = document.createElement("pre");
+    pre.className = "codice-vista";
+    pre.innerHTML = cod ? evidenziaPython(cod) : "(nessun codice)";
+    cont.appendChild(h);
+    cont.appendChild(pre);
+    const o = Array.isArray(d.output) ? d.output[i] : null;
+    if(o){
+      const et = document.createElement("div");
+      et.className = "etichetta-output";
+      et.textContent = "Output";
+      const po = document.createElement("pre");
+      po.className = "output-vista" + (o.errore ? " errore" : "");
+      po.textContent = o.nonDisponibile ? "(output non disponibile)" : (o.output || "(nessun output)");
+      cont.appendChild(et);
+      cont.appendChild(po);
+    }
+  });
+  const log = $("dett-log");
+  log.innerHTML = "";
+  (d.eventi || []).slice().reverse().forEach(ev => {
+    const li = document.createElement("li");
+    li.innerHTML = '<span class="tipo">' + escapeHtml(ev.tipo) + '</span><span class="ora">' + ora(ev.orario) + '</span>';
+    log.appendChild(li);
+  });
+  $("dettaglio-sfondo").hidden = false;
+}
+$("btn-chiudi-dettaglio").addEventListener("click", () => { $("dettaglio-sfondo").hidden = true; });
+
+$("btn-esporta").addEventListener("click", () => {
+  if(!consegne.length){ $("errore-files").textContent = "Carica prima almeno un file di consegna."; return; }
+  const sessioni = Array.from(new Set(consegne.map(c => c.dati.sessione))).join(", ");
+  let testo = "Report compito — " + sessioni + "\nGenerato " + new Date().toLocaleString("it-IT") + "\n\n";
+  consegne.slice().sort((x, y) => (x.dati.nome || "").localeCompare(y.dati.nome || "")).forEach(c => {
+    const d = c.dati, a = analizza(d);
+    testo += "============================================================\n";
+    testo += "Studente: " + (d.nome || "(senza nome)") + "\n";
+    testo += "Consegnato: " + (d.oraConsegna || "—") + " (durata " + formatDurata(a.durata) + ")\n";
+    testo += "Uscite dalla pagina: " + (d.contaUscite || 0) + " (tempo fuori: " + formatDurata(a.fuoriMs) + ")\n";
+    testo += "Tentativi copia/incolla: " + (d.contaCopiaIncolla || 0) + "\n";
+    testo += "Uscite da schermo intero: " + a.uscFs + " · tentativi devtools: " + a.devtools + " · ricariche: " + a.ricariche + "\n";
+    if(!c.sigilloOk) testo += "ATTENZIONE: il file risulta modificato dopo la consegna\n";
+    testo += "Eventi:\n";
+    (d.eventi || []).forEach(ev => { testo += "  - " + ev.orario + "  " + ev.tipo + "\n"; });
+    (d.codice || []).forEach((cod, i) => {
+      const titolo = (CONFIG.esercizi[i] && CONFIG.esercizi[i].titolo) || ("Esercizio " + (i + 1));
+      testo += "\n--- " + titolo + " ---\n" + (cod || "") + "\n";
+    });
+    testo += "\n";
+  });
+  scaricaFile("report-" + (slug(sessioni) || "compito") + ".txt", testo, "text/plain");
+});
+
+/* ---------- report PDF: un compito per pagina, con codice e output ---------- */
+function costruisciReport(){
+  const elenco = consegne.slice().sort((x, y) => (x.dati.nome || "").localeCompare(y.dati.nome || ""));
+  const ora = (iso) => iso ? new Date(iso).toLocaleTimeString("it-IT") : "—";
+  const kv = (l, v) => '<div class="rep-kv"><b>' + escapeHtml(l) + '</b><span>' + escapeHtml(v) + '</span></div>';
+  let h = "";
+  elenco.forEach((c) => {
+    const d = c.dati, a = analizza(d), s = statoConsegna(c);
+    h += '<section class="rep-studente">';
+    h += '<header class="rep-testa"><h2>' + escapeHtml(d.nome || "(senza nome)") + '</h2>' +
+         '<span class="rep-stato rep-' + s.cls + '">' + escapeHtml(s.label) + '</span></header>';
+    h += '<div class="rep-sub">' + escapeHtml(d.titoloCompito || "") + ' · codice ' + escapeHtml(d.sessione) + '</div>';
+    h += '<div class="rep-metagriglia">' +
+      kv("Consegna", d.provvisorio ? "non consegnato (backup)" : ora(d.oraConsegna)) +
+      kv("Durata", formatDurata(a.durata)) +
+      kv("Uscite dalla pagina", (d.contaUscite || 0) + " (" + formatDurata(a.fuoriMs) + " fuori)") +
+      kv("Tentativi copia/incolla", String(d.contaCopiaIncolla || 0)) +
+      kv("Uscite da schermo intero", String(a.uscFs)) +
+      kv("Tentativi devtools", String(a.devtools)) +
+      kv("Ricariche / ripristini", String(a.ricariche)) +
+      '</div>';
+    if(!c.sigilloOk) h += '<div class="rep-attenzione">ATTENZIONE: il file risulta modificato dopo la consegna.</div>';
+    (d.codice || []).forEach((cod, i) => {
+      const titolo = (CONFIG.esercizi[i] && CONFIG.esercizi[i].titolo) || ("Esercizio " + (i + 1));
+      const o = Array.isArray(d.output) ? d.output[i] : null;
+      let testoOut;
+      if(!o) testoOut = "(output non presente in questo file)";
+      else if(o.nonDisponibile) testoOut = "(output non disponibile)";
+      else testoOut = escapeHtml(o.output) || "(nessun output)";
+      h += '<div class="rep-esercizio"><h3>' + escapeHtml(titolo) + '</h3>' +
+        '<div class="rep-eti">Codice</div><pre class="rep-codice">' + (cod ? evidenziaPython(cod) : "(nessun codice)") + '</pre>' +
+        '<div class="rep-eti">Output</div><pre class="rep-output' + (o && o.errore ? ' rep-errore' : '') + '">' + testoOut + '</pre></div>';
+    });
+    const evs = (d.eventi || []).filter((ev) => ev.tipo !== "inizio");
+    h += '<div class="rep-eti">Registro eventi</div><div class="rep-eventi">' +
+      (evs.length ? evs.map((ev) => '<span>' + ora(ev.orario) + ' ' + escapeHtml(ev.tipo) + '</span>').join("") : "<span>nessun evento</span>") +
+      '</div>';
+    h += '</section>';
+  });
+  return h;
+}
+let titoloPaginaPrima = document.title;
+$("btn-pdf").addEventListener("click", () => {
+  if(!consegne.length){ $("errore-files").textContent = "Carica prima almeno un file di consegna."; return; }
+  $("errore-files").textContent = "";
+  $("report-stampa").innerHTML = costruisciReport();
+  const sessioni = Array.from(new Set(consegne.map((c) => c.dati.sessione))).join("-");
+  titoloPaginaPrima = document.title;
+  document.title = "Report-" + (slug(sessioni) || "compito");   // Chrome lo propone come nome del PDF
+  document.body.classList.add("stampa-report");
+  window.print();
+});
+window.addEventListener("afterprint", () => {
+  document.body.classList.remove("stampa-report");
+  $("report-stampa").innerHTML = "";
+  document.title = titoloPaginaPrima;
+});
+
+}
+
+/* ============================================================
+   CARICAMENTO DEL COMPITO (compito.js) E AVVIO
+   ============================================================ */
+(function(){
+  function errore(msg){
+    const b = document.getElementById("banner-errore-compito");
+    b.textContent = msg;
+    b.hidden = false;
+  }
+  function valida(c){
+    if(!c || typeof c !== "object")
+      return "Il file compito.js non è stato letto correttamente. Controlla virgole, parentesi e accenti gravi (`) e che comincia con window.COMPITO = {";
+    if(typeof c.titoloCompito !== "string" || !c.titoloCompito.trim()) return "compito.js: manca titoloCompito.";
+    if(typeof c.passwordDocente !== "string" || !c.passwordDocente) return "compito.js: manca passwordDocente.";
+    if(!Array.isArray(c.esercizi) || !c.esercizi.length) return "compito.js: serve almeno un esercizio in esercizi.";
+    for(let i = 0; i < c.esercizi.length; i++){
+      const e = c.esercizi[i];
+      for(const campo of ["titolo", "testoBrief", "templateCodice"]){
+        if(!e || typeof e[campo] !== "string") return "compito.js: nell'esercizio " + (i + 1) + " manca il campo " + campo + ".";
+      }
+    }
+    if(!Array.isArray(c.elencoClasse)) c.elencoClasse = [];
+    if(!Array.isArray(c.pacchetti)) c.pacchetti = [];
+    if(c.motore !== "pyodide") c.motore = "skulpt";
+    if(typeof c.saleSigillo !== "string") c.saleSigillo = "";
+    return null;
+  }
+  const s = document.createElement("script");
+  s.src = "compito.js?t=" + Date.now();   // evita che resti in cache una versione vecchia
+  s.onload = () => {
+    const c = window.COMPITO;
+    const e = valida(c);
+    if(e){ errore(e); return; }
+    avviaApp(c);
+  };
+  s.onerror = () => errore("Impossibile caricare compito.js: deve stare nella stessa cartella di index.html.");
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
